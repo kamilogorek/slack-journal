@@ -1,0 +1,105 @@
+#!/usr/bin/env node
+
+// show/list
+// clear
+// send//save
+// write/add
+// remove {id} (poprawia kolejnosc id etc.)
+
+const _async = require('asyncawait/async')
+const _await = require('asyncawait/await')
+const path = require('path')
+const fs = require('fs')
+const journalPath = path.join(path.dirname(fs.realpathSync(__dirname)), 'slack-journal.md')
+const daemon = require('daemon')
+const app = require('../lib/app')
+const ps = require('ps-node')
+const pid = parseInt(process.pid, 10)
+const command = process.argv[2]
+
+console.log(journalPath)
+
+const startProcess = _async(() => {
+  const isRunning = _await(isProcessRunning())
+
+  if (isRunning) {
+    console.log('Slack Journal: Already Running')
+  } else {
+    console.log('Slack Journal: Started')
+
+    daemon()
+    app()
+  }
+})
+
+const stopProcess = _async(() => {
+  const isRunning = _await(isProcessRunning())
+
+  if (isRunning) {
+    const runningProcessId = _await(getRunningProcessPid())
+
+    ps.kill(runningProcessId, (err) => {
+      if (err) {
+        throw new Error(err)
+      } else {
+        console.log('Slack Journal: Stopped')
+      }
+    })
+  } else {
+    console.log('Slack Journal: Not Running')
+  }
+})
+
+function isProcessRunning () {
+  return new Promise((resolve, reject) => {
+    ps.lookup({
+      command: 'node',
+      psargs: ['lx']
+    }, (err, resultList = []) => {
+      if (err) reject(err)
+
+      resolve(resultList.some((process) => {
+        const processPid = parseInt(process.pid, 10)
+        if (processPid === pid) return false
+        return /slack-journal/.test(process.arguments.join(' '))
+      }))
+    })
+  })
+}
+
+function getRunningProcessPid () {
+  return new Promise((resolve, reject) => {
+    ps.lookup({
+      command: 'node',
+      psargs: ['lx']
+    }, (err, resultList = []) => {
+      if (err) reject(err)
+
+      let runningProcessPid = null
+
+      resultList.forEach((process) => {
+        const processPid = parseInt(process.pid, 10)
+        if (processPid === pid) return false
+        if (/slack-journal/.test(process.arguments.join(' '))) runningProcessPid = processPid
+      })
+
+      resolve(runningProcessPid)
+    })
+  })
+}
+
+switch (command) {
+  case 'start': {
+    startProcess()
+    break
+  }
+
+  case 'stop': {
+    stopProcess()
+    break
+  }
+
+  default: {
+    console.log(`Slack Journal: Invalid command: ${command}`)
+  }
+}

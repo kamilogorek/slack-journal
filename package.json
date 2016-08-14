@@ -1,0 +1,20 @@
+{
+  "name": "slack-journal",
+  "version": "1.0.0",
+  "description": "Daemon based automated Slack Journal CLI tool",
+  "preferGlobal": true,
+  "bin": "./bin/slack-journal",
+  "scripts": {
+    "lint": "standard"
+  },
+  "author": "Kamil Ogórek <kamil.ogorek@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "asyncawait": "^1.0.6",
+    "daemon": "^1.1.0",
+    "ps-node": "^0.1.2"
+  },
+  "devDependencies": {
+    "standard": "^7.1.2"
+  }
+}
